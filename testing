@@ -1,3 +1,28 @@
+def readFromJsonData2(data):
+    result_paired = []
+    result_not_paired= []
+    for key, value in data.items():
+        if value['Parents']:
+            for x in range(len(value['Parents'])):
+                if value['Parents'][x] in conceptLabelDict_2017:
+                    result_paired.append([key, value['Parents'][x], 1])
+        if value['Siblings']:
+            for x in range(len(value['Siblings'])):
+                if value['Siblings'][x] in conceptLabelDict_2017:
+                    result_not_paired.append([key, value['Siblings'][x], 0])
+        if value['Children']:
+            for x in range(len(value['Children'])):
+                if value['Children'][x] in conceptLabelDict_2017:
+                    result_not_paired.append([key, value['Children'][x], 0])
+    return result_paired, result_not_paired
+
+
+
+
+
+
+
+
 graph = tf.get_default_graph()
 x = graph.get_tensor_by_name("input_vector:0")
 y = graph.get_tensor_by_name("class_label:0")
