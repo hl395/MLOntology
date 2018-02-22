@@ -1,0 +1,74 @@
+graph = tf.get_default_graph()
+x = graph.get_tensor_by_name("input_vector:0")
+y = graph.get_tensor_by_name("class_label:0")
+keep_prob = tf.placeholder(tf.float32)
+predict= graph.get_tensor_by_name("predict:0")
+probability = graph.get_tensor_by_name("probability:0")
+correct_prediction= graph.get_tensor_by_name("correct_prediction:0")
+accuracy= graph.get_tensor_by_name("accuracy:0")
+
+
+
+
+
+
+
+def readOutPairsTwo(key, parent, paired_list, not_paired_list):
+    pair_list=[]
+    not_pair_list=[]
+    for i in range(len(paired_list)):
+        pair=paired_list[i]
+        if pair[0] == key and pair[1]!= parent:
+            pair_list.append(pair)
+    for i in range(len(not_paired_list)):
+        pair=not_paired_list[i]
+        if pair[0] == key:
+            not_pair_list.append(pair)
+    return pair_list, not_pair_list
+    
+    
+parents_dict = processConceptParents(data)
+
+parent_prob_avg_list = []
+not_parent_prob_avg_list = []
+
+for key, parents in parents_dict.items():
+    print("Processing key ", key)
+    if len(parents) > 1:
+        for i in range(len(parents)):            
+            parent = parents[i]
+            print("\tProcessing its %d parent %s "%(i, parent))
+            if parent in conceptLabelDict_2017:
+                parent_str = conceptLabelDict_2017[parent]
+            else:
+                parent_str = conceptLabelDict_2018[parent]
+            pair_list, not_pair_list = readOutPairsTwo(key, parent, paired_list, not_paired_list)
+            vector_list, label_list = getVectorsFromModel(pair_list, conceptLabelDict_2018, vector_model, parent_str)
+            if vector_list:
+                y_prob = sess.run(probability, feed_dict={x:vector_list, keep_prob:1})
+                pprint(y_prob)
+                y_pred = sess.run(predict, feed_dict={x:vector_list, keep_prob:1})
+                pprint(y_pred)
+                print("\t\t Parent %d probability average: %s" % (len(y_prob[:,1]),np.mean(y_prob[:,1])))
+                parent_prob_avg_list.append(np.mean(y_prob[:,1]))
+            
+            vector_list, label_list = getVectorsFromModel(not_pair_list, conceptLabelDict_2018, vector_model, parent_str)
+            if vector_list:
+                y_prob = sess.run(probability, feed_dict={x:vector_list, keep_prob:1})
+                pprint(y_prob)
+                y_pred = sess.run(predict, feed_dict={x:vector_list, keep_prob:1})
+                pprint(y_pred)
+                print("\t\t Not Parent %d probability average: %s" % (len(y_prob[:,1]),np.mean(y_prob[:,1])))
+                not_parent_prob_avg_list.append(np.mean(y_prob[:,1]))
+            
+#             acc = sess.run(accuracy, feed_dict={x:vector_list, y: np.eye(2)[label_list], keep_prob:1})
+#             print("\t\t %d predictions Acc: %s" % (len(pair_list),acc))
+                              
+#             y_pred = sess.run(predict, feed_dict={x:vector_list, keep_prob:1})
+#             err_ids = np.flatnonzero(y_pred != label_list) 
+#             print("\t\t %d predictions Correct: %s" % (len(y_pred),len(err_ids)))
+
+
+print(np.mean(parent_prob_avg_list))
+
+print(np.mean(not_parent_prob_avg_list))
